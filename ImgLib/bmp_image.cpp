@@ -25,36 +25,36 @@ namespace img_lib {
 		// Зарезервированное пространство
 		uint32_t offset = 54;
 	}
-	PACKED_STRUCT_END
+		PACKED_STRUCT_END
 
-	PACKED_STRUCT_BEGIN BitmapInfoHeader{
+		PACKED_STRUCT_BEGIN BitmapInfoHeader{
 		// Размер заголовка
 		uint32_t header_size = 40;
-		// Ширина изображения в пикселях
-		int width = 0;
-		// Высота изображения в пикселях
-		int height = 0;
-		// Количество плоскостей
-		uint16_t flatness = 1;
-		// Количество бит на пиксель
-		uint16_t bit_per_pixel = 24;
-		// Тип сжатия
-		uint32_t compress_type = 0;
-		// Количество байт в данных
-		uint32_t amount_bytes_in_data = 0;
-		// Горизонтальное разрешение, пикселей на метр
-		int horizontal_ppm = 11811;
-		// Вертикальное разрешение, пикселей на метр
-		int vertical_ppm = 11811;
-		// Количество использованных цветов
-		int number_colors_used = 0;
-		// Количество значимых цветов
-		int number_significant_colors = 0x1000000;
-		}
-	PACKED_STRUCT_END
+	// Ширина изображения в пикселях
+	int32_t width = 0;
+	// Высота изображения в пикселях
+	int32_t height = 0;
+	// Количество плоскостей
+	uint16_t flatness = 1;
+	// Количество бит на пиксель
+	uint16_t bit_per_pixel = 24;
+	// Тип сжатия
+	uint32_t compress_type = 0;
+	// Количество байт в данных
+	uint32_t amount_bytes_in_data = 0;
+	// Горизонтальное разрешение, пикселей на метр
+	int32_t horizontal_ppm = 11811;
+	// Вертикальное разрешение, пикселей на метр
+	int32_t vertical_ppm = 11811;
+	// Количество использованных цветов
+	int32_t number_colors_used = 0;
+	// Количество значимых цветов
+	int32_t number_significant_colors = 0x1000000;
+	}
+		PACKED_STRUCT_END
 
-	// напишите эту функцию
-	bool SaveBMP(const Path& file, const Image& image) {
+		// напишите эту функцию
+		bool SaveBMP(const Path& file, const Image& image) {
 		const int width = image.GetWidth();
 		const int height = image.GetHeight();
 		const int stride = GetBMPStride(width);
@@ -68,6 +68,7 @@ namespace img_lib {
 		info_header.amount_bytes_in_data = stride * height;
 
 		ofstream out(file, ios::binary);
+		if (!out) return false;
 		out.write(reinterpret_cast<const char*>(&file_header), 14);
 		out.write(reinterpret_cast<const char*>(&info_header), 40);
 
@@ -89,9 +90,16 @@ namespace img_lib {
 	// напишите эту функцию
 	Image LoadBMP(const Path& file) {
 		ifstream ifs(file, ios::binary);
-		int width, height;
+		if (!ifs) return {};
 
-		ifs.ignore(18);
+		std::array<char, 2> signature{};
+		ifs.read(signature.data(), signature.size());
+		if (signature[0] != 'B' || signature[1] != 'M') {
+			return {};
+		}
+
+		int width, height;
+		ifs.ignore(16);
 		ifs.read(reinterpret_cast<char*>(&width), sizeof(width));
 		ifs.read(reinterpret_cast<char*>(&height), sizeof(height));
 		ifs.ignore(28);
